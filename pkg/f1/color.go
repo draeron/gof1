@@ -22,6 +22,16 @@ func (c *Controller) SetPadColor(btn button.Button, color color.Color) error {
 	return errors.WithMessage(err, "failed to write to HID device")
 }
 
+func (c *Controller) SetDial(val int8) error {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+
+	c.lastOut.SevenSegment = val
+
+	err := c.lastOut.Write(c.device)
+	return errors.WithMessage(err, "failed to write to HID device")
+}
+
 func (c *Controller) SetBrightness(btn button.Button, val uint8) error {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()

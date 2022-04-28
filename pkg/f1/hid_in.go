@@ -12,7 +12,7 @@ import (
 type InState struct {
 	Version        byte
 	PressedButtons map[string]bool
-	Dial           int8
+	Dial           uint8
 	Filters        [4]uint16
 	Volumes        [4]uint16
 }
@@ -116,6 +116,7 @@ func (packet *InState) UnpackPacket(rdr io.Reader) error {
 		button.Type,
 		button.Size,
 		button.Browse,
+		button.Dial,
 	})
 
 	/*

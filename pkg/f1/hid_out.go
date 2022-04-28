@@ -3,6 +3,8 @@ package f1
 import (
 	"bytes"
 	"encoding/binary"
+	"fmt"
+	"math"
 
 	"github.com/pkg/errors"
 
@@ -40,6 +42,33 @@ func NewOutState() *OutState {
 		o.Functions[btn] = 0
 	}
 	return &o
+}
+
+// Segments Order: G, C, B, A, F, E, D
+type Segments [7]byte
+
+const On = 64
+const Off = 0
+
+var NumberSegmentMapping = map[int8]Segments{
+	0: {Off, On, On, On, On, On, On},
+	1: {Off, On, On, Off, Off, Off, Off},
+	2: {On, Off, On, On, Off, On, On},
+	3: {On, On, On, On, Off, Off, On},
+	4: {On, On, On, Off, On, Off, Off},
+	5: {On, On, Off, On, On, Off, On},
+	6: {On, On, Off, On, On, On, On},
+	7: {Off, On, On, On, Off, Off, Off},
+	8: {On, On, On, On, On, On, On},
+	9: {On, On, On, On, On, Off, Off},
+}
+
+func init() {
+	for idx, seg := range NumberSegmentMapping {
+		if len(seg) != 7 {
+			panic(fmt.Sprintf("segment data for number %v has the wrong length", idx))
+		}
+	}
 }
 
 func (o OutState) Write(device *hid.Device) error {
@@ -81,17 +110,47 @@ func (o OutState) Write(device *hid.Device) error {
 		Note that the DP actually appears top left of the digit.
 
 		Byte 1: DP
-		Byte 2: Segment G
-		Byte 3: Segment C
-		Byte 4: Segment B
-		Byte 5: Segment A
-		Byte 6: Segment F
-		Byte 7: Segment E
-		Byte 8: Segment D
+		Byte 2: Segment G (mid)
+		Byte 3: Segment C (right-bot)
+		Byte 4: Segment B (right-bot)
+		Byte 5: Segment A (top)
+		Byte 6: Segment F (left-top)
+		Byte 7: Segment E (left-bott
+		Byte 8: Segment D (bot)
 	*/
-	err = binary.Write(writer, binary.LittleEndian, make([]byte, 16))
+	dot := byte(0)
+	if o.SevenSegment < 0 {
+		dot = On
+	}
+	err = binary.Write(writer, binary.LittleEndian, dot)
 	if err != nil {
 		return errors.WithMessage(err, "failed to write HID packet")
+	}
+
+	absolute := int8(math.Abs(float64(o.SevenSegment)))
+	if absolute > 99 {
+		absolute = 99
+	}
+
+	val := absolute % 10
+	if segments, ok := NumberSegmentMapping[val]; ok {
+		err = binary.Write(writer, binary.LittleEndian, segments)
+		if err != nil {
+			return errors.WithMessage(err, "failed to write HID packet")
+		}
+	} else {
+		panic(fmt.Sprintf("missing segment map for %v", val))
+	}
+
+	val = absolute / 10
+	err = binary.Write(writer, binary.LittleEndian, dot)
+	if segments, ok := NumberSegmentMapping[val]; ok {
+		err = binary.Write(writer, binary.LittleEndian, segments)
+		if err != nil {
+			return errors.WithMessage(err, "failed to write HID packet")
+		}
+	} else {
+		panic(fmt.Sprintf("missing segment map for %v", val))
 	}
 
 	/*
@@ -180,9 +239,9 @@ func (o OutState) Write(device *hid.Device) error {
 	}
 
 	packet := writer.Bytes()
-	// if len(packet) != 81 {
-	// 	return errors.New("wrong computed packet length")
-	// }
+	if len(packet) != 81 {
+		panic(fmt.Sprintf("wrong computed packet size, current: %v, spec: 81", len(packet)))
+	}
 
 	wrote, err := device.Write(packet)
 	log.Debugf("wrote %d bytes to HID devices", wrote)

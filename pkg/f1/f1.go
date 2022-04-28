@@ -36,9 +36,13 @@ func Open() (*Controller, error) {
 		jinfo, _ := json.MarshalIndent(devinfo, "", "  ")
 		log.Infof("info: \n%v", string(jinfo))
 
-		if devinfo.Product == "Traktor Kontrol F1" {
-			selected = &devinfo
+		const f1product = "Traktor Kontrol F1"
+		if devinfo.Product != f1product {
+			log.Warnf("usb product name '%s' is not equal to '%s'", f1product)
 		}
+
+		selected = &devinfo
+		break
 	}
 
 	if selected == nil {
@@ -78,20 +82,24 @@ func (c *Controller) processInput() {
 			return
 		} else if length > 0 {
 			current := NewInState()
-			current.UnpackPacket(bytes.NewReader(buffer))
 
-			// ignore value on first dial event
-			if first {
-				first = false
-				previous.Dial = current.Dial
-			}
-
+			err = current.UnpackPacket(bytes.NewReader(buffer))
 			if err != nil {
 				log.Errorf("failed to parse HID packet")
 			}
+
+			// ignore value on first dial event
+			if first {
+				log.Infof("first received message is ignored")
+				previous.Dial = current.Dial
+				first = false
+			} else {
+			}
+
 			c.compareState(previous, current)
 
 			previous = current
+
 			// log.Infof("%v bytes were read from HID device", length)
 		}
 	}
@@ -105,13 +113,22 @@ func (c *Controller) compareState(previous, current *InState) {
 
 	if current.Dial != previous.Dial {
 		evt.Btn = button.Dial
-		if current.Dial > previous.Dial {
+
+		pd := previous.Dial
+		cd := current.Dial
+		if (pd == 255 && cd == 0) || (pd == 0 && cd == 255) {
+			pd = current.Dial
+			cd = previous.Dial
+		}
+
+		if cd > pd {
 			evt.Type = f1event.Increment
 			evt.Value = int16(current.Dial)
 		} else {
 			evt.Type = f1event.Decrement
 			evt.Value = int16(current.Dial)
 		}
+
 		c.sendToSubscribers(evt)
 	}
 
