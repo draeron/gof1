@@ -10,12 +10,12 @@ import (
 	"github.com/bearsh/hid"
 
 	"github.com/draeron/gof1/pkg/f1/button"
-	f1event "github.com/draeron/gof1/pkg/f1/event"
+	"github.com/draeron/gof1/pkg/f1/event"
 )
 
 type Controller struct {
 	device      *hid.Device
-	subscribers []chan<- f1event.Event
+	subscribers []chan<- event.Event
 	lastOut     *OutState
 	mutex       sync.RWMutex
 }
@@ -42,7 +42,7 @@ func Open() (*Controller, error) {
 		}
 
 		selected = &devinfo
-		break
+
 	}
 
 	if selected == nil {
@@ -109,7 +109,7 @@ func (c *Controller) processInput() {
 	Compare state to previous and emit events based on difference
 */
 func (c *Controller) compareState(previous, current *InState) {
-	evt := f1event.Event{}
+	evt := event.Event{}
 
 	if current.Dial != previous.Dial {
 		evt.Btn = button.Dial
@@ -122,10 +122,10 @@ func (c *Controller) compareState(previous, current *InState) {
 		}
 
 		if cd > pd {
-			evt.Type = f1event.Increment
+			evt.Type = event.Increment
 			evt.Value = int16(current.Dial)
 		} else {
-			evt.Type = f1event.Decrement
+			evt.Type = event.Decrement
 			evt.Value = int16(current.Dial)
 		}
 
@@ -136,10 +136,10 @@ func (c *Controller) compareState(previous, current *InState) {
 		if current.PressedButtons[key] != previous.PressedButtons[key] {
 			evt.Btn, _ = button.ParseButton(key)
 			if state {
-				evt.Type = f1event.Pressed
+				evt.Type = event.Pressed
 				evt.Value = 1
 			} else {
-				evt.Type = f1event.Released
+				evt.Type = event.Released
 				evt.Value = 0
 			}
 			c.sendToSubscribers(evt)
@@ -151,7 +151,7 @@ func (c *Controller) compareState(previous, current *InState) {
 	for idx, value := range current.Volumes {
 		if current.Volumes[idx] != previous.Volumes[idx] {
 			evt.Btn = button.Volume1 + button.Button(idx)
-			evt.Type = f1event.Changed
+			evt.Type = event.Changed
 			evt.Value = int16(float64(value) / maxval * 256)
 			c.sendToSubscribers(evt)
 		}
@@ -160,7 +160,7 @@ func (c *Controller) compareState(previous, current *InState) {
 	for idx, value := range current.Filters {
 		if current.Filters[idx] != previous.Filters[idx] {
 			evt.Btn = button.Filter1 + button.Button(idx)
-			evt.Type = f1event.Changed
+			evt.Type = event.Changed
 			evt.Value = int16(float32(value) / maxval * 256)
 			c.sendToSubscribers(evt)
 		}
@@ -176,18 +176,4 @@ func (c *Controller) Close() {
 func (c *Controller) String() string {
 	return "papapa"
 	// return fmt.Sprintf("F1 Controller, IN: %v, Out: %v", c.dev.port.In, c.dev.port.Out)
-}
-
-func (c *Controller) Subscribe(channel chan<- f1event.Event) {
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
-	c.subscribers = append(c.subscribers, channel)
-}
-
-func (c *Controller) sendToSubscribers(evt f1event.Event) {
-	c.mutex.RLock()
-	defer c.mutex.RUnlock()
-	for _, channel := range c.subscribers {
-		channel <- evt
-	}
 }

@@ -15,10 +15,6 @@ func main() {
 	log := logger.NewLogrus("main")
 	common.Setup()
 
-	// ctrl, err := f1.Open()
-	// common.Must(err)
-	// log.Debug(ctrl.String())
-
 	if !hid.Supported() {
 		log.Fatalln("hid not supported")
 	}
@@ -29,12 +25,8 @@ func main() {
 	}
 	defer dev.Close()
 
-	events := make(chan event.Event, 100)
-
-	dev.Subscribe(events)
-
+	// Set startup state
 	dial := int8(0)
-
 	colors := map[button.Button]color.PaletteColor{}
 	padcount := len(button.Pads())
 	for idx, col := range color.Colors() {
@@ -44,32 +36,37 @@ func main() {
 		}
 	}
 
+	for btn, col := range colors {
+		err = dev.SetPadColor(btn, col)
+		log.ErrorIf(err, "failed to ")
+	}
+	dev.SetDial(0)
+	for _, btn := range button.Mutes() {
+		dev.SetBrightness(btn, 127)
+	}
+	for _, btn := range button.Functions() {
+		dev.SetBrightness(btn, 255)
+	}
+
+	// Start event listening
+	events := make(chan event.Event, 100)
+	dev.Subscribe(events)
+
+	dev.AddCallback(event.IsButtonOfType(button.Pads()...), func(evt event.Event) {
+		col, _ := colors[evt.Btn]
+		col = (col + 1) % color.White
+		if col > color.White {
+			col = color.PaletteColor(0)
+		}
+		dev.SetPadColor(evt.Btn, col)
+		colors[evt.Btn] = col
+	})
+
 	go func() {
-		for btn, col := range colors {
-			err = dev.SetPadColor(btn, col)
-			log.ErrorIf(err, "failed to ")
-		}
-
-		dev.SetDial(0)
-
-		for _, btn := range button.Mutes() {
-			dev.SetBrightness(btn, 127)
-		}
-
-		for _, btn := range button.Functions() {
-			dev.SetBrightness(btn, 255)
-		}
-
 		for evt := range events {
 			log.Infof("%v", evt)
 
 			switch {
-			case evt.Btn.IsPad():
-				col, _ := colors[evt.Btn]
-				col = (col + 1) % color.White
-				dev.SetPadColor(evt.Btn, col)
-				colors[evt.Btn] = col
-
 			case evt.Btn.IsFunctions(), evt.Btn.IsMute():
 				on := uint8(0)
 				if evt.Value <= 0 {

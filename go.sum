@@ -1,7 +1,5 @@
 github.com/TheCodeTeam/goodbye v0.0.0-20170927022442-a83968bda2d3 h1:Aku8veiH7T+Qk4vwzWO8wQkXUsvLWPHxZ5qPDI6ClWc=
 github.com/TheCodeTeam/goodbye v0.0.0-20170927022442-a83968bda2d3/go.mod h1:u2WA2i0w7/Z6X8Cl03PUZzExqR3yjN5ITqL3F1pqVOg=
-github.com/bearsh/hid v1.4.1-0.20220201201955-1452ae05ea39 h1:jM7duo9zz/xKyrMhICXOwqKq3yjWVSaEAWKHh5zIEyA=
-github.com/bearsh/hid v1.4.1-0.20220201201955-1452ae05ea39/go.mod h1:KbQByg8WfPr92v7aaKAHTtZUEVG7e2XRpcF8+TopQv8=
 github.com/bearsh/hid v1.4.1-0.20220201202009-adffbb8a8616 h1:dWvNavE0UjP6IAWz4/Sq3oSNFgrPDneRuTEkyukb480=
 github.com/bearsh/hid v1.4.1-0.20220201202009-adffbb8a8616/go.mod h1:KbQByg8WfPr92v7aaKAHTtZUEVG7e2XRpcF8+TopQv8=
 github.com/benbjohnson/clock v1.1.0 h1:Q92kusRqC1XV2MjkWETPvjJVqKetz1OzxZB7mHJLju8=

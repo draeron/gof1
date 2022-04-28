@@ -18,8 +18,4 @@ require (
 	golang.org/x/sys v0.0.0-20211216021012-1d35b9e2eb4e // indirect
 )
 
-// replace gitlab.com/gomidi/midi/v2/drivers/rtmididrv/imported/rtmidi => gitlab.com/gomidi/midi/v2/drivers/rtmididrv/imported/rtmidi v0.0.0-20220419143954-65c25ed8cc67
-
-replace github.com/draeron/gopkgs => ../gopkgs
-
-//replace github.com/bearsh/hid => ../../external/hid
+//replace github.com/draeron/gopkgs => ../gopkgs
