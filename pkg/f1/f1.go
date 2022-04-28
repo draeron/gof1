@@ -9,14 +9,13 @@ import (
 
 	"github.com/bearsh/hid"
 
-	"github.com/draeron/gof1/pkg/f1/button"
 	"github.com/draeron/gof1/pkg/f1/event"
 )
 
 type Controller struct {
 	device      *hid.Device
 	subscribers []chan<- event.Event
-	lastOut     *OutState
+	state       State
 	mutex       sync.RWMutex
 }
 
@@ -28,7 +27,10 @@ func Open() (*Controller, error) {
 
 	var err error
 	ctrl := &Controller{
-		lastOut: NewOutState(),
+		state: State{
+			out: NewOutState(),
+			in:  InState{},
+		},
 	}
 
 	var selected *hid.DeviceInfo
@@ -56,7 +58,7 @@ func Open() (*Controller, error) {
 
 	log.Infof("opened device: %v", ctrl.device)
 
-	err = ctrl.lastOut.Write(ctrl.device)
+	err = ctrl.state.out.Write(ctrl.device)
 	if err != nil {
 		log.Errorf("failed to init HID state: %+v", err)
 	}
@@ -69,8 +71,6 @@ func Open() (*Controller, error) {
 func (c *Controller) processInput() {
 	log.Infof("starting to read from HID device")
 	defer log.Infof("stopped reading from HID device")
-
-	previous := NewInState()
 
 	first := true
 
@@ -88,17 +88,25 @@ func (c *Controller) processInput() {
 				log.Errorf("failed to parse HID packet")
 			}
 
+			previous := c.State()
+
 			// ignore value on first dial event
 			if first {
 				log.Infof("first received message is ignored")
-				previous.Dial = current.Dial
+				previous.in.Dial = current.Dial
 				first = false
-			} else {
 			}
 
-			c.compareState(previous, current)
+			events := previous.eventFromDiff(*current)
 
-			previous = current
+			for _, evt := range events {
+				c.sendToSubscribers(evt)
+			}
+
+			// replace input state
+			c.mutex.Lock()
+			c.state.in = *current
+			c.mutex.Unlock()
 
 			// log.Infof("%v bytes were read from HID device", length)
 		}
@@ -106,65 +114,12 @@ func (c *Controller) processInput() {
 }
 
 /*
-	Compare state to previous and emit events based on difference
+	thread safe state retrieval
 */
-func (c *Controller) compareState(previous, current *InState) {
-	evt := event.Event{}
-
-	if current.Dial != previous.Dial {
-		evt.Btn = button.Dial
-
-		pd := previous.Dial
-		cd := current.Dial
-		if (pd == 255 && cd == 0) || (pd == 0 && cd == 255) {
-			pd = current.Dial
-			cd = previous.Dial
-		}
-
-		if cd > pd {
-			evt.Type = event.Increment
-			evt.Value = int16(current.Dial)
-		} else {
-			evt.Type = event.Decrement
-			evt.Value = int16(current.Dial)
-		}
-
-		c.sendToSubscribers(evt)
-	}
-
-	for key, state := range current.PressedButtons {
-		if current.PressedButtons[key] != previous.PressedButtons[key] {
-			evt.Btn, _ = button.ParseButton(key)
-			if state {
-				evt.Type = event.Pressed
-				evt.Value = 1
-			} else {
-				evt.Type = event.Released
-				evt.Value = 0
-			}
-			c.sendToSubscribers(evt)
-		}
-	}
-
-	const maxval = 4090
-
-	for idx, value := range current.Volumes {
-		if current.Volumes[idx] != previous.Volumes[idx] {
-			evt.Btn = button.Volume1 + button.Button(idx)
-			evt.Type = event.Changed
-			evt.Value = int16(float64(value) / maxval * 256)
-			c.sendToSubscribers(evt)
-		}
-	}
-
-	for idx, value := range current.Filters {
-		if current.Filters[idx] != previous.Filters[idx] {
-			evt.Btn = button.Filter1 + button.Button(idx)
-			evt.Type = event.Changed
-			evt.Value = int16(float32(value) / maxval * 256)
-			c.sendToSubscribers(evt)
-		}
-	}
+func (c *Controller) State() State {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+	return c.state.Copy()
 }
 
 func (c *Controller) Close() {

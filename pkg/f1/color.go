@@ -16,9 +16,9 @@ func (c *Controller) SetPadColor(btn button.Button, color color.Color) error {
 	}
 
 	idx := btn - button.PadA1
-	c.lastOut.Pads[idx] = color
+	c.state.out.Pads[idx] = color
 
-	err := c.lastOut.Write(c.device)
+	err := c.state.out.Write(c.device)
 	return errors.WithMessage(err, "failed to write to HID device")
 }
 
@@ -26,9 +26,9 @@ func (c *Controller) SetDial(val int8) error {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
-	c.lastOut.SevenSegment = val
+	c.state.out.SevenSegment = val
 
-	err := c.lastOut.Write(c.device)
+	err := c.state.out.Write(c.device)
 	return errors.WithMessage(err, "failed to write to HID device")
 }
 
@@ -45,11 +45,11 @@ func (c *Controller) SetBrightness(btn button.Button, val uint8) error {
 	switch {
 	case btn.IsMute():
 		idx := btn - button.Mute1
-		c.lastOut.Mute[idx] = bright
+		c.state.out.Mute[idx] = bright
 	case btn.IsFunctions():
-		c.lastOut.Functions[btn] = bright
+		c.state.out.Functions[btn] = bright
 	}
 
-	err := c.lastOut.Write(c.device)
+	err := c.state.out.Write(c.device)
 	return errors.WithMessage(err, "failed to write to HID device")
 }

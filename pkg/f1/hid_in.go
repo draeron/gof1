@@ -11,7 +11,7 @@ import (
 
 type InState struct {
 	Version        byte
-	PressedButtons map[string]bool
+	PressedButtons map[button.Button]button.PushState
 	Dial           uint8
 	Filters        [4]uint16
 	Volumes        [4]uint16
@@ -19,10 +19,10 @@ type InState struct {
 
 func NewInState() *InState {
 	in := &InState{
-		PressedButtons: map[string]bool{},
+		PressedButtons: map[button.Button]button.PushState{},
 	}
 	for _, btn := range button.Push.Buttons() {
-		in.PressedButtons[btn.String()] = false
+		in.PressedButtons[btn] = button.Released
 	}
 	return in
 }
@@ -206,6 +206,10 @@ func unpackuint16(data uint16) uint16 {
 
 func (i *InState) unpackbools(zebyte byte, buttons []button.Button) {
 	for bit, btn := range buttons {
-		i.PressedButtons[btn.String()] = zebyte>>(7-bit)&0x1 != 0
+		if zebyte>>(7-bit)&0x1 != 0 {
+			i.PressedButtons[btn] = button.Pushed
+		} else {
+			i.PressedButtons[btn] = button.Released
+		}
 	}
 }

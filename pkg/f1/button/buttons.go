@@ -123,6 +123,20 @@ func Functions() (s []Button) {
 	return
 }
 
+func Volumes() (s []Button) {
+	for b := Volume1; b <= Volume4; b++ {
+		s = append(s, b)
+	}
+	return
+}
+
+func Knobs() (s []Button) {
+	for b := Filter1; b <= Filter4; b++ {
+		s = append(s, b)
+	}
+	return
+}
+
 func FromXY(x, y int) Button {
 	if x < 0 || y < 0 || x > 4 || y > 4 {
 		return Button(-1)

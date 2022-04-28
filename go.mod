@@ -5,7 +5,7 @@ go 1.18
 require (
 	github.com/TheCodeTeam/goodbye v0.0.0-20170927022442-a83968bda2d3
 	github.com/bearsh/hid v1.4.1-0.20220201202009-adffbb8a8616
-	github.com/draeron/gopkgs v0.3.0
+	github.com/draeron/gopkgs v0.3.1
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.8.1
 )

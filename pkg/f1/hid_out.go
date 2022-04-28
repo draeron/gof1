@@ -31,7 +31,7 @@ func (l LEDIntensity) Value() uint8 {
 	return uint8(l)
 }
 
-func NewOutState() *OutState {
+func NewOutState() OutState {
 	o := OutState{
 		Functions: map[button.Button]LEDIntensity{},
 	}
@@ -41,7 +41,7 @@ func NewOutState() *OutState {
 	for _, btn := range button.Functions() {
 		o.Functions[btn] = 0
 	}
-	return &o
+	return o
 }
 
 // Segments Order: G, C, B, A, F, E, D
