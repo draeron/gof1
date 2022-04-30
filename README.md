@@ -7,5 +7,5 @@ F1 controller aren't MIDI device per se, they are HID devices just like your
 mouse or keyboard. The NI drivers converts signal to/from the device into MIDI
 signals (which are set through the Controller Editor app).
 
-This library implemented the HID protocol and provide some utilities to setup
-control layouts and states.
+This library implemented the HID protocol (thus require CGO compiler) and provide some utilities 
+to setup control layouts and states. 

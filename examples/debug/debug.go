@@ -4,9 +4,9 @@ import (
 	"github.com/bearsh/hid"
 
 	"github.com/draeron/gof1/examples/common"
-	"github.com/draeron/gof1/pkg/f1"
-	"github.com/draeron/gof1/pkg/f1/button"
-	"github.com/draeron/gof1/pkg/f1/event"
+	"github.com/draeron/gof1/pkg/device"
+	button2 "github.com/draeron/gof1/pkg/f1/button"
+	event2 "github.com/draeron/gof1/pkg/f1/event"
 	"github.com/draeron/gopkgs/color"
 	"github.com/draeron/gopkgs/logger"
 )
@@ -19,20 +19,22 @@ func main() {
 		log.Fatalln("hid not supported")
 	}
 
-	dev, err := f1.Open()
+	dev, err := device.Open()
 	if err != nil {
 		log.Fatalf("%+v", err)
 	}
 	defer dev.Close()
 
+	dev.EnableDebugLogger()
+
 	// Set startup state
 	dial := int8(0)
-	colors := map[button.Button]color.PaletteColor{}
-	padcount := len(button.Pads())
+	colors := map[button2.Button]color.PaletteColor{}
+	padcount := len(button2.Pads())
 	for idx, col := range color.Colors() {
 		col = col % color.White
 		if idx < padcount {
-			colors[button.PadA1+button.Button(idx)] = col
+			colors[button2.PadA1+button2.Button(idx)] = col
 		}
 	}
 
@@ -41,18 +43,18 @@ func main() {
 		log.ErrorIf(err, "failed to ")
 	}
 	dev.SetDial(0)
-	for _, btn := range button.Mutes() {
+	for _, btn := range button2.Mutes() {
 		dev.SetBrightness(btn, 127)
 	}
-	for _, btn := range button.Functions() {
+	for _, btn := range button2.Functions() {
 		dev.SetBrightness(btn, 255)
 	}
 
 	// Start event listening
-	events := make(chan event.Event, 100)
+	events := make(chan event2.Event, 100)
 	dev.Subscribe(events)
 
-	dev.AddCallback(event.IsButtonOfType(button.Pads()...), func(evt event.Event) {
+	dev.AddCallback(event2.IsButtonOfType(button2.Pads()...), func(evt event2.Event) {
 		col, _ := colors[evt.Btn]
 		col = (col + 1) % color.White
 		if col > color.White {
@@ -74,17 +76,17 @@ func main() {
 				}
 				dev.SetBrightness(evt.Btn, on)
 
-			case evt.Btn == button.Dial && evt.Type == event.Pressed:
+			case evt.Btn == button2.Dial && evt.Type == event2.Pressed:
 				dial = 0
 				dev.SetDial(0)
 
-			case evt.Type == event.Decrement:
+			case evt.Type == event2.Decrement:
 				if dial > -99 {
 					dial--
 				}
 				dev.SetDial(dial)
 
-			case evt.Type == event.Increment:
+			case evt.Type == event2.Increment:
 				if dial < 99 {
 					dial++
 				}

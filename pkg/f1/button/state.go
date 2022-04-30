@@ -8,4 +8,3 @@ PushState x ENUM(
 	Pushed
 ) */
 type PushState int
-

@@ -1,4 +1,4 @@
-package f1
+package device
 
 import (
 	"encoding/binary"
@@ -6,12 +6,12 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/draeron/gof1/pkg/f1/button"
+	button2 "github.com/draeron/gof1/pkg/f1/button"
 )
 
 type InState struct {
 	Version        byte
-	PressedButtons map[button.Button]button.PushState
+	PressedButtons map[button2.Button]button2.PushState
 	Dial           uint8
 	Filters        [4]uint16
 	Volumes        [4]uint16
@@ -19,10 +19,10 @@ type InState struct {
 
 func NewInState() *InState {
 	in := &InState{
-		PressedButtons: map[button.Button]button.PushState{},
+		PressedButtons: map[button2.Button]button2.PushState{},
 	}
-	for _, btn := range button.Push.Buttons() {
-		in.PressedButtons[btn] = button.Released
+	for _, btn := range button2.Push.Buttons() {
+		in.PressedButtons[btn] = button2.Released
 	}
 	return in
 }
@@ -59,15 +59,15 @@ func (packet *InState) UnpackPacket(rdr io.Reader) error {
 	if err != nil {
 		return errors.WithMessage(err, "failed to read HID packet")
 	}
-	packet.unpackbools(sbyte, []button.Button{
-		button.PadA1,
-		button.PadA2,
-		button.PadA3,
-		button.PadA4,
-		button.PadB1,
-		button.PadB2,
-		button.PadB3,
-		button.PadB4,
+	packet.unpackbools(sbyte, []button2.Button{
+		button2.PadA1,
+		button2.PadA2,
+		button2.PadA3,
+		button2.PadA4,
+		button2.PadB1,
+		button2.PadB2,
+		button2.PadB3,
+		button2.PadB4,
 	})
 
 	/*
@@ -84,15 +84,15 @@ func (packet *InState) UnpackPacket(rdr io.Reader) error {
 	if err != nil {
 		return errors.WithMessage(err, "failed to read HID packet")
 	}
-	packet.unpackbools(sbyte, []button.Button{
-		button.PadC1,
-		button.PadC2,
-		button.PadC3,
-		button.PadC4,
-		button.PadD1,
-		button.PadD2,
-		button.PadD3,
-		button.PadD4,
+	packet.unpackbools(sbyte, []button2.Button{
+		button2.PadC1,
+		button2.PadC2,
+		button2.PadC3,
+		button2.PadC4,
+		button2.PadD1,
+		button2.PadD2,
+		button2.PadD3,
+		button2.PadD4,
 	})
 
 	// The boolean state for the other buttons are sent via Byte 4 & Byte 5.
@@ -110,13 +110,13 @@ func (packet *InState) UnpackPacket(rdr io.Reader) error {
 	if err != nil {
 		return errors.WithMessage(err, "failed to read HID packet")
 	}
-	packet.unpackbools(sbyte, []button.Button{
-		button.Shift,
-		button.Reverse,
-		button.Type,
-		button.Size,
-		button.Browse,
-		button.Dial,
+	packet.unpackbools(sbyte, []button2.Button{
+		button2.Shift,
+		button2.Reverse,
+		button2.Type,
+		button2.Size,
+		button2.Browse,
+		button2.Dial,
 	})
 
 	/*
@@ -133,14 +133,14 @@ func (packet *InState) UnpackPacket(rdr io.Reader) error {
 	if err != nil {
 		return errors.WithMessage(err, "failed to read HID packet")
 	}
-	packet.unpackbools(sbyte, []button.Button{
-		button.Mute1,
-		button.Mute2,
-		button.Mute3,
-		button.Mute4,
-		button.Sync,
-		button.Quant,
-		button.Capture,
+	packet.unpackbools(sbyte, []button2.Button{
+		button2.Mute1,
+		button2.Mute2,
+		button2.Mute3,
+		button2.Mute4,
+		button2.Sync,
+		button2.Quant,
+		button2.Capture,
 	})
 
 	/*
@@ -204,12 +204,12 @@ func unpackuint16(data uint16) uint16 {
 	return uint16(first) + uint16(second&0x0F)<<8
 }
 
-func (i *InState) unpackbools(zebyte byte, buttons []button.Button) {
+func (i *InState) unpackbools(zebyte byte, buttons []button2.Button) {
 	for bit, btn := range buttons {
 		if zebyte>>(7-bit)&0x1 != 0 {
-			i.PressedButtons[btn] = button.Pushed
+			i.PressedButtons[btn] = button2.Pushed
 		} else {
-			i.PressedButtons[btn] = button.Released
+			i.PressedButtons[btn] = button2.Released
 		}
 	}
 }

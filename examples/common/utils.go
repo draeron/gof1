@@ -9,15 +9,17 @@ import (
 	"github.com/TheCodeTeam/goodbye"
 	"github.com/sirupsen/logrus"
 
+	"github.com/draeron/gof1/pkg/device"
 	"github.com/draeron/gof1/pkg/f1"
+	"github.com/draeron/gof1/pkg/layout"
 	"github.com/draeron/gopkgs/logger"
-	"github.com/draeron/gopkgs/midi"
 )
 
 func Setup() {
 	logrus.SetLevel(logrus.DebugLevel)
+	device.SetLogger(logger.NewLogrus("device"))
+	layout.SetLogger(logger.NewLogrus("layout"))
 	f1.SetLogger(logger.NewLogrus("f1"))
-	midi.SetLogger(logger.NewLogrus("midi"))
 }
 
 func WaitExit() {

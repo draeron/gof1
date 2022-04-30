@@ -1,4 +1,4 @@
-package f1
+package device
 
 import (
 	"bytes"
@@ -10,14 +10,14 @@ import (
 
 	"github.com/bearsh/hid"
 
-	seven_bits "github.com/draeron/gof1/pkg/color/7bits"
-	"github.com/draeron/gof1/pkg/f1/button"
+	button2 "github.com/draeron/gof1/pkg/f1/button"
 	"github.com/draeron/gopkgs/color"
+	seven_bits "github.com/draeron/gopkgs/color/7bits"
 )
 
 type OutState struct {
 	SevenSegment int8 // [-99,99] sign means dot is turned on
-	Functions    map[button.Button]LEDIntensity
+	Functions    map[button2.Button]LEDIntensity
 	Pads         [16]color.Color
 	Mute         [4]LEDIntensity
 }
@@ -33,12 +33,12 @@ func (l LEDIntensity) Value() uint8 {
 
 func NewOutState() OutState {
 	o := OutState{
-		Functions: map[button.Button]LEDIntensity{},
+		Functions: map[button2.Button]LEDIntensity{},
 	}
 	for idx, _ := range o.Pads {
 		o.Pads[idx] = color.Black
 	}
-	for _, btn := range button.Functions() {
+	for _, btn := range button2.Functions() {
 		o.Functions[btn] = 0
 	}
 	return o
@@ -168,14 +168,14 @@ func (o OutState) Write(device *hid.Device) error {
 		Byte 8     Sync
 	*/
 	err = binary.Write(writer, binary.LittleEndian, []byte{
-		o.Functions[button.Browse].Value(),
-		o.Functions[button.Size].Value(),
-		o.Functions[button.Type].Value(),
-		o.Functions[button.Reverse].Value(),
-		o.Functions[button.Shift].Value(),
-		o.Functions[button.Capture].Value(),
-		o.Functions[button.Quant].Value(),
-		o.Functions[button.Sync].Value(),
+		o.Functions[button2.Browse].Value(),
+		o.Functions[button2.Size].Value(),
+		o.Functions[button2.Type].Value(),
+		o.Functions[button2.Reverse].Value(),
+		o.Functions[button2.Shift].Value(),
+		o.Functions[button2.Capture].Value(),
+		o.Functions[button2.Quant].Value(),
+		o.Functions[button2.Sync].Value(),
 	})
 	if err != nil {
 		return errors.WithMessage(err, "failed to write HID packet")
@@ -227,7 +227,7 @@ func (o OutState) Write(device *hid.Device) error {
 		Byte 80     Column 1 Stop Key LED 1
 		Byte 81     Column 1 Stop Key LED 2
 	*/
-	for idx := len(button.Mutes()) - 1; idx >= 0; idx-- {
+	for idx := len(button2.Mutes()) - 1; idx >= 0; idx-- {
 		mute := o.Mute[idx]
 		err = binary.Write(writer, binary.LittleEndian, []byte{
 			mute.Value(),

@@ -1,4 +1,4 @@
-package minimk3
+package layout
 
 import (
 	"github.com/draeron/gopkgs/logger"
